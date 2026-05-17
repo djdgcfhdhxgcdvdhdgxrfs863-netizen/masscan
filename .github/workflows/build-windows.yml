@@ -3,13 +3,16 @@ name: Build Masscan Windows EXE
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install MSYS2
         uses: msys2/setup-msys2@v2
@@ -18,39 +21,27 @@ jobs:
           install: >
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-make
-
-      - name: Add MSYS2 to PATH
-        shell: pwsh
-        run: echo "$Env:PATH += ';C:\msys64\mingw64\bin'" >> $GITHUB_ENV
+            git
 
       - name: Clone Masscan
-        run: git clone https://github.com/robertdavidgraham/masscan.git
-
-      - name: Build Masscan.exe
+        shell: bash
         run: |
+          git clone https://github.com/robertdavidgraham/masscan.git
           cd masscan
           make
-
-      - name: Generate dynamic tag
-        shell: pwsh
-        run: |
-          $TAG_NAME = "masscan-windows-" + (Get-Date -Format "yyyyMMdd-HHmmss")
-          Write-Host "TAG_NAME=$TAG_NAME"
-          git tag $TAG_NAME
-          git push origin $TAG_NAME
-          echo "TAG_NAME=$TAG_NAME" >> $env:GITHUB_ENV
-          
-      - name: Create Release
-        uses: ncipollo/release-action@v1
-        with:
-          tag: ${{ env.TAG_NAME }}
-          name: Release ${{ env.TAG_NAME }}
-          draft: false
-          prerelease: false
 
       - name: Upload EXE to Release
         uses: softprops/action-gh-release@v1
         with:
-          files: masscan/masscan.exe
+          tag_name: "masscan-windows-${{ github.run_number }}"
+          name: "Masscan Windows Build ${{ github.run_number }}"
+          body: |
+            🚀 Masscan Windows Binary
+            
+            ### Available Binary:
+            - **Windows**: `masscan.exe`
+            
+            Built from: https://github.com/robertdavidgraham/masscan
+          files: masscan/bin/masscan.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
