@@ -1,41 +1,47 @@
 name: Build Masscan Windows EXE
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+  workflow_dispatch:   
 
 jobs:
-  build-windows:
+  build:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-    - name: Install MSYS2 (for make, gcc)
-      uses: msys2/setup-msys2@v3
-      with:
-        update: true
-        install: >
-          mingw-w64-x86_64-gcc
-          mingw-w64-x86_64-make
+      - name: Install MSYS2
+        uses: msys2/setup-msys2@v3
+        with:
+          update: true
+          install: >
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-make
 
-    - name: Add MSYS2 to PATH
-      shell: pwsh
-      run: |
-        echo "$Env:PATH += ';C:\msys64\mingw64\bin'" >> $GITHUB_ENV
+      - name: Add MSYS2 to PATH
+        shell: pwsh
+        run: echo "$Env:PATH += ';C:\msys64\mingw64\bin'" >> $GITHUB_ENV
 
-    - name: Clone Masscan
-      run: git clone https://github.com/robertdavidgraham/masscan.git
+      - name: Clone Masscan
+        run: git clone https://github.com/robertdavidgraham/masscan.git
 
-    - name: Build Masscan.exe
-      run: |
-        cd masscan
-        make
+      - name: Build Masscan.exe
+        run: |
+          cd masscan
+          make
 
-    - name: Upload EXE artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: masscan-windows
-        path: masscan/masscan.exe
+      - name: Create or update GitHub Release
+        id: create_release
+        uses: softprops/turnstyle@v1
+        with:
+          tag: masscan-windows-latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload EXE to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: masscan/masscan.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
