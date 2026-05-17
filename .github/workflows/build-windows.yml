@@ -32,12 +32,13 @@ jobs:
           make
 
       - name: Generate dynamic tag
-        id: tag
+        shell: pwsh
         run: |
-          TAG_NAME=masscan-windows-$(date +'%Y%m%d-%H%M%S')
-          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
+          $TAG_NAME = "masscan-windows-" + (Get-Date -Format "yyyyMMdd-HHmmss")
+          Write-Host "TAG_NAME=$TAG_NAME"
           git tag $TAG_NAME
           git push origin $TAG_NAME
+          echo "TAG_NAME=$TAG_NAME" >> $env:GITHUB_ENV
           
       - name: Create Release
         uses: ncipollo/release-action@v1
